@@ -1,0 +1,233 @@
+##### Document to Jenkins Installation #####
+
+
+	1. Goto AWS console and Spin up Redhat instance.
+	2. Goto below URL for steps to install Jenkins
+	https://www.vultr.com/docs/how-to-install-jenkins-on-centos-7
+	
+	Here are the steps from above site.
+	
+	Before proceeding, you must have:
+		• Deployed a Vultr CentOS 7 server instance from scratch.
+		• Logged into your machine as a non-root user with sudo privileges.
+	Step 1: Update your CentOS 7 system
+	One of the Linux system administrator's best practices is keeping a system up to date. Install the latest stable packages, then reboot.
+	sudo yum install epel-release
+	
+	We might face when we execute above steps for adding repositories to our yum reposts - epel-release 
+	
+	Please see below link for more details
+	
+	https://www.tecmint.com/how-to-enable-epel-repository-for-rhel-centos-6-5/
+	
+	1. What is EPEL repos?
+	EPEL (Extra Packages for Enterprise Linux) is open source and free community based repository project from Fedora team which provides 100% high quality add-on software packages for Linux distribution including RHEL (Red Hat Enterprise Linux), CentOS,
+	
+	From <https://www.tecmint.com/how-to-enable-epel-repository-for-rhel-centos-6-5/> 
+	
+	As we are installing on Redhat recent version
+	
+	Please execute below version.
+	
+	## RHEL/CentOS 7 64-Bit ##
+# wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+# rpm -ivh epel-release-latest-7.noarch.rpm
+	
+	From <https://www.tecmint.com/how-to-enable-epel-repository-for-rhel-centos-6-5/> 
+	
+	
+	How to verify
+	# yum repolist
+	Should list repos included epel.
+	
+	
+	
+	Next execute below commands.
+	
+	sudo yum update
+sudo reboot
+	When the reboot finishes, login with the same sudo user.
+	Step 2: Install Java
+	Before you can install Jenkins, you need to setup a Java virtual machine on your system. Here, let's install the latest OpenJDK Runtime Environment 1.8.0 using YUM:
+	sudo yum install java-1.8.0-openjdk.x86_64
+	After the installation, you can confirm it by running the following command:
+	java -version
+	This command will tell you about the Java runtime environment that you have installed:
+	openjdk version "1.8.0_91"
+OpenJDK Runtime Environment (build 1.8.0_91-b14)
+OpenJDK 64-Bit Server VM (build 25.91-b14, mixed mode)
+	In order to help Java-based applications locate the Java virtual machine properly, you need to set two environment variables: "JAVA_HOME" and "JRE_HOME".
+	sudo cp /etc/profile /etc/profile_backup
+echo 'export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk' | sudo tee -a /etc/profile
+echo 'export JRE_HOME=/usr/lib/jvm/jre' | sudo tee -a /etc/profile
+source /etc/profile
+	Finally, you can print them for review:
+	echo $JAVA_HOME
+echo $JRE_HOME
+	
+	To confirm paths are added to PATH environnment variable.
+	
+	#vi /etc/profile
+	You should see below lines at the bottom.
+	
+	
+	export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-opensdk
+	export JRE_HOME=/usr/lib/jvm/jre
+	
+	Step 2.1 : Alternate method to install JAVA from ORACLE .
+	
+	Download JDK
+	 
+	wget -c --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/8u161-b12/2f38c3b165be4555a1fa6e98c45e0808/jdk-8u161-linux-x64.rpm
+	 
+	 
+	rpm -ivh jdk-8u161-linux-x64.rpm
+	jave –version
+	 
+	Set environment variables
+	 
+	https://www.unixmen.com/install-oracle-java-jdk-8-centos-76-56-4/
+	 
+	 
+	export JAVA_HOME=/usr/java/jdk1.8.0_161/
+	export PATH=$PATH:$JAVA_HOME
+	echo $JAVA_HOME
+	 
+	vi /etc/profile.d/java.sh
+	
+	Step 3: Install Jenkins
+	Use the official YUM repo to install the latest stable version of Jenkins, which is 1.651.2 at the time of writing:
+	cd ~ 
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+yum install jenkins
+	Start the Jenkins service and set it to run at boot time:
+	sudo systemctl start jenkins.service
+sudo systemctl enable jenkins.service
+	In order to allow visitors access to Jenkins
+	
+	From <https://www.vultr.com/docs/how-to-install-jenkins-on-centos-7> 
+	
+	
+	TODO items:
+	Use nginx as proxy - to Jenkins on port 8080. So that we can allow visitors to see Jenkins page.
+	Follow instruction on below link.
+	https://www.vultr.com/docs/how-to-install-jenkins-on-centos-7
+	
+	
+	Step 4 :  Open Jenkins web page 
+	
+	1. Get the public DNS name of EC2 instance.
+	2. Open chrome or IE  and goto   http://<ec2 DNS name > :8080
+	3. Open port 8080 in the AWS security group so that above URL will access Jenkins service and you will get Jenkins landing page.
+
+	4. Open Jenkins landing page is opened it will ask for initial password.
+Please go to below location in the ec2 box and paste intot he box provided on the Jenkins web page.
+
+	/var/lib/jenkins/secrets/initialAdminPassword
+	
+	5. Jenkins will ask to to continue and asks you for install required packages/Plugins .
+	6. You can select either of them .
+	7. Create first Admin user and Click on "SAVE and FINISH".
+
+Step 5: Setting up internal Jenkins user in EC2 - Jenkins Master box.
+
+	1. Open /etc/passwd file
+	2. #vi /etc/passwd go to Jenkins user and modify /bin/false to as below line.
+	jenkins:x:997:994:Jenkins Automation Server:/var/lib/jenkins:/bin/bash
+	
+	Above step will allow jenkin user to use bash console.
+	
+	3. Until now passwd for Jenkins is not yet created.  Note:" jenkins" user is by default created by Jenkins installation.
+	#passwd jenkins
+	
+	
+	Step 6: Add Jenkins user to sudoers file
+	 so that system won't prompt for password.
+	
+	#sudo visudo
+	Add lines as blow to the file 
+	
+	
+	## Allow root to run any commands anywhere
+	root    ALL=(ALL)       ALL
+	jenkins ALL=(ALL)       NOPASSWD: ALL
+	
+	***  Note:  
+	In general when you working as jenkins user and trying to open or execute any command which need to have sudo permissions.  Everytime  system will ask you for jenkins password.
+	
+	You can override this by adding jenkins users to /etc/sudoers file by above command ie #sudo visudo  and add NOPASSWD line.
+	
+	Ex: previously if you execute below command it will ask you for password.
+	
+	You are running as jenkins user.
+	$ sudo vi /etc/password   will ask for jenkins user password.
+	Evethough you are not in sudoers file -- ie you are not authorized person to execute any command as "sudo".. System will deny you to execute above command 
+	
+	By adding jenkins users to sudoers file will solve this problem.
+	
+	
+	Step 7 : Generate ssh key & ssh-copy-id
+	
+	#ssh-keygen
+	Will create public and private  keypair in .ssh folder.
+	#ssh-copy-id  jenkins@localhost
+	
+	Above command will throw Permission denied error.
+	
+	Please solve this with below procedure.
+	Log in as root
+	Edit ssh config: 
+	sudo nano /etc/ssh/sshd_config
+	Change this line:
+	PasswordAuthentication no
+	to
+	PasswordAuthentication yes
+	Restart daemon: 
+	sudo systemctl restart sshd
+	
+	From <https://www.digitalocean.com/community/questions/ssh-copy-id-not-working-permission-denied-publickey> 
+	
+	
+	Upon successful execution of above steps you are able - do ssh to localhost which won't prompt you for password - ie silent authentication happens.
+	
+	# sssh-copy-id jenkins@localhost
+	-bash-4.2$ ssh jenkins@localhost
+	Last login: Mon Feb 26 06:44:45 2018
+	-bash-4.2$
+	
+	Above step will create new file .ssh directory - authorized_keys
+	
+	
+	Step 8 - Steps to execute at Jenkins Slave machine:
+	
+	    1  sudo adduser jenkins
+	    2  sudo passwd jenkins
+	    3  sudo visudo
+	## Allow root to run any commands anywhere
+	root    ALL=(ALL)       ALL
+	jenkins ALL=(ALL)       NOPASSWD:ALL
+	
+	    4  sudo yum update
+	    5  su - jenkins
+	
+	HAPPYY JENKINS
+	
+	
+	----------------------------------
+	
+	Creating JOBS in Jenkins webpage.
+	
+	1. New Item. -->  Select folder 
+	2. New Item -->  FreeStyle Project.
+	3. sElect Free style poejct -> create a  build job
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
